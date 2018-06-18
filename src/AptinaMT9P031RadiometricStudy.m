@@ -1,18 +1,24 @@
 %%% Radiometric analysis of the Aptina MT9P031 sensor
 % 
+% Info that might be useful
 % From a review
 % Responsivity (V/lux-sec (@550 nm))        01.4
 % Pixel Dynamic Range (dB)                  70.1
 % SNR_MAX (dB)                              38.1
 % Absolute sensitivity threshold (?)        13.0
 % ^ How many photons are required to reach the read noise of the sensor
+%
+% max ratio of reflectivity ?	0.85 from Adam Koenig's camera report
+% min ratio of reflectivity ?	0.6
+% Detectable apparent magnitude	5
+% Irradiance of Vega (W/m^2)	3.10E-09
 
 clear all
 close all
 
 %% Initialization
-% 
-dist_arr = logspace(0, 5, 2000); % Relative distance in m
+% Make the calculations from 1 to 100km
+dist_arr = logspace(0, 5, 2000); % Relative distance in m [1m, 10e+5m]
 times = [1e-3, 2e-3,  1e-2, 5e-1, 1, 5]; % Exposure times in s
 l = length(dist_arr);
 t_l = length(times);
@@ -86,11 +92,17 @@ for t = times % logspace(-5, -1, 4)
     if (xout)
         disp(['At ',num2str(xout(1)),' m, the sensor saturates with ',...
                 num2str(sensor_optics.watts_per_pixel*10^12),' pW/pix']);
+    else
+        disp(['The saturation intensity does not intersect with the ',...
+            'incident power from the target satellite']);
     end
     if (det_xout)
         disp(['At ',num2str(det_xout(1)),' m, the sensor detects the ',... 
             'target at incident power ', ...
             num2str(sensor_optics.detection_watts_per_pixel*10^12),' pW/pix']);
+    else
+        disp(['The detection intensity does not intersect with the ',...
+            'incident power from the target satellite']);
     end
     disp(['maxSNR: ',num2str(sensor_optics.maxSNR)])
     disp(['Read noise: ',num2str(sensor_optics.read_noise)])

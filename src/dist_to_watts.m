@@ -15,19 +15,15 @@
 
 function ave_watts = dist_to_watts(dist, x_dim, y_dim, z_dim,...
                         alpha, f, s_s, N, d_coc_pix, pix_pitch)
-% max ratio of reflectivity ?	0.85 from Adam Koenig's camera report
-% min ratio of reflectivity ?	0.6
-% Detectable apparent magnitude	5
-% Irradiance of Vega (W/m^2)	3.10E-09
-% B = L/(4*d^2) inverse square law
+                    
 sol_irr = 620; % Solar irradiance (W/m^2) in VIS spectrum
 
 % Defocussing effects
-coc_area = pi*(d_coc_pix*pix_pitch/2)^2;
-n_pix_coc = coc_area/(pix_pitch^2);
+coc_area = pi*(d_coc_pix*pix_pitch/2)^2; % area of CoC in m
+n_pix_coc = coc_area/(pix_pitch^2); % area of CoC in pixels
 
 % Calculate area
-areas = area(x_dim, y_dim, z_dim); % min_area, ave_area, max_area
+areas = ComputeArea(x_dim, y_dim, z_dim); % min_area, ave_area, max_area
 
 % Pixels are discrete
 % size of target on the sensor in pixels
@@ -43,12 +39,13 @@ for i = [1, 2, 3]
     % min_power, ave_power, max_power emitted from the source in W
     power = sol_irr * alpha * areas(i);
     
-%     irr_src = power/(4*pi*dist^2); % assumption: source is isotropic
-    irr_src = power*view_factor(sqrt(areas(2)/pi),aperture_radius,dist);
+    % Use the following equations/functions to divide by the view factor 
+    irr_src = power/(4*pi*dist^2); % assumption: source is isotropic
+%     irr_src = power*view_factor(sqrt(areas(2)/pi),aperture_radius,dist);
 %     irr_src = power*view_factor_square(sqrt(areas(2)),sqrt(aperture_area),dist);
     
     powers_per_pix(i) = (irr_src * aperture_area)/n_pix(i);
-    % once the target is big enough to cover the CoC stop dividing the power
+    % Stop dividing the power once the target is big enough to cover the CoC 
     powers_per_pix(i) = powers_per_pix(i) / (max([(n_pix_coc/n_pix(i)) 1])); 
 end
  

@@ -1,4 +1,4 @@
-function area_range = area(x,y,z)
+function area_range = ComputeArea(x,y,z)
 sorted_dims = sort([x,y,z]);
 min_area = sorted_dims(1)*sorted_dims(2);
 ave_area = (x*y + y*z + x*z)/3;
