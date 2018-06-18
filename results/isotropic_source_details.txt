@@ -1,0 +1,33 @@
+AptinaMT9P031RadiometricStudy
+Exposure time: 1 ms
+At 1323.9512 m, the sensor saturates with 4.0197 pW/pix
+At 21108.0636 m, the sensor detects the target at incident power 0.015814 pW/pix
+maxSNR: 81.4088
+Read noise: 8.1399
+ 
+Exposure time: 2 ms
+At 1872.3592 m, the sensor saturates with 2.0099 pW/pix
+At 29851.3149 m, the sensor detects the target at incident power 0.007907 pW/pix
+maxSNR: 81.4088
+Read noise: 8.1399
+ 
+Exposure time: 10 ms
+At 4186.6835 m, the sensor saturates with 0.40197 pW/pix
+At 66749.7994 m, the sensor detects the target at incident power 0.0015814 pW/pix
+maxSNR: 81.4088
+Read noise: 8.1399
+ 
+Exposure time: 500 ms
+At 29604.6247 m, the sensor saturates with 0.0080395 pW/pix
+maxSNR: 81.4088
+Read noise: 8.1399
+ 
+Exposure time: 1000 ms
+At 41867.0889 m, the sensor saturates with 0.0040197 pW/pix
+maxSNR: 81.4088
+Read noise: 8.1399
+ 
+Exposure time: 5000 ms
+At 93618.1349 m, the sensor saturates with 0.00080395 pW/pix
+maxSNR: 81.4088
+Read noise: 8.1399

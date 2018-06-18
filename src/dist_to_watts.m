@@ -34,13 +34,20 @@ areas = area(x_dim, y_dim, z_dim); % min_area, ave_area, max_area
 n_pix = ceil((areas/(pix_pitch^2))*((s_s/dist)^2));
 powers_per_pix = zeros(1,3);
 
-%
+
+aperture_radius = f/(2*N); % radius of the entrance pupil
+aperture_area = pi * aperture_radius^2;
+
+% Calculate the power
 for i = [1, 2, 3]
     % min_power, ave_power, max_power emitted from the source in W
     power = sol_irr * alpha * areas(i);
-    % assumption: source is isotropic
-    irr_src = power/(4*pi*dist^2);
-    powers_per_pix(i) = (irr_src * 4 * pi * (f/(2*N))^2)/n_pix(i);
+    
+%     irr_src = power/(4*pi*dist^2); % assumption: source is isotropic
+    irr_src = power*view_factor(sqrt(areas(2)/pi),aperture_radius,dist);
+%     irr_src = power*view_factor_square(sqrt(areas(2)),sqrt(aperture_area),dist);
+    
+    powers_per_pix(i) = (irr_src * aperture_area)/n_pix(i);
     % once the target is big enough to cover the CoC stop dividing the power
     powers_per_pix(i) = powers_per_pix(i) / (max([(n_pix_coc/n_pix(i)) 1])); 
 end
