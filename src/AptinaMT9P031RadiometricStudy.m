@@ -18,12 +18,12 @@ close all
 
 %% Initialization
 % Make the calculations from 1 to 100km
-dist_arr = logspace(0, 5, 2000); % Relative distance in m [1m, 10e+5m]
-times = [1e-3, 2e-3,  1e-2, 5e-1, 1, 5]; % Exposure times in s
+dist_arr = logspace(-1, 8, 200); % Relative distance in m [1m, 10e+5m]
+times = [1e-6, 2e-6,  1e-5, 1e-4, 1e-2, 1]; % Exposure times in s
 l = length(dist_arr);
 t_l = length(times);
 ctr = 1;
-target_detection_SNR = 3;
+target_detection_SNR = 3.0;
 
 % Preallocating
 wpp = zeros(1, l); % Incident power in watts per pixel
@@ -33,7 +33,7 @@ p = zeros(1, t_l);
 % Sensor characteristics 
 sensor_optics.quantum_efficiency = 0.63; % at 525 nm
 sensor_optics.lambda = 525e-9; % 525 nm
-sensor_optics.full_well = 6693;
+sensor_optics.full_well = 6693.0;
 sensor_optics.dynamic_range = 58.3; % 70.1 in datasheet
 sensor_optics.pix_pitch = 2.2e-6;
 
@@ -41,7 +41,7 @@ sensor_optics.pix_pitch = 2.2e-6;
 sensor_optics.focal_length = 22.86e-3; % Focal length in m
 sensor_optics.f_number = 1.2; % f-number
 sensor_optics.s_s = 22.9217e-3; % Distance b/w sensor and lens in m
-sensor_optics.d_coc_pix = 6; % Diameter of the circle of confusion in pixels
+sensor_optics.d_coc_pix = 6.0; % Diameter of the circle of confusion in pixels
 
 figure
 colors = [[0,1,0.5]; [0,0.5,1]; [1,0.5,0]; [0.75,0,1]; [1,0,0.5]; [1,0.5,0.5]];
@@ -74,8 +74,8 @@ for t = times % logspace(-5, -1, 4)
     sensor_optics.maxSNR = ComputeSNR(sensor_optics);
     sensor_optics.detection_watts_per_pixel = ComputeIntensityAtTargetSNR(sensor_optics, target_detection_SNR);
     
-    detection(ctr,:) = ones([1 l])*sensor_optics.detection_watts_per_pixel*10^12;
-    saturation(ctr,:) = ones([1 l])*sensor_optics.watts_per_pixel*10^12; 
+    detection(ctr,:) = ones([1 l])*sensor_optics.detection_watts_per_pixel.*10^12;
+    saturation(ctr,:) = ones([1 l])*sensor_optics.watts_per_pixel.*10^12; 
     % in pW/pix
 
 % find the solutions for saturation + detection of the target
@@ -97,7 +97,7 @@ for t = times % logspace(-5, -1, 4)
             'incident power from the target satellite']);
     end
     if (det_xout)
-        disp(['At ',num2str(det_xout(1)),' m, the sensor detects the ',... 
+        disp(['At ',num2str(det_xout(length(det_xout))),' m, the sensor detects the ',... 
             'target at incident power ', ...
             num2str(sensor_optics.detection_watts_per_pixel*10^12),' pW/pix']);
     else
@@ -114,3 +114,35 @@ legend([pw, p], labels)
 title('Power per pixel vs distance')
 xlabel('Relative distance (m)')
 ylabel('Power per pixel (pW)')
+
+min_exp = 1e-6;
+max_exp = (2^32 - 1)*10^-6;
+time_data = logspace(log10( 1e-2 ), log10( 1 ), 200);
+td_l = length(time_data);
+
+detection_arr = zeros([1 td_l]);
+
+for ctr = 1:td_l 
+    sensor_optics.integration_time = time_data(ctr); % in s
+    sensor_optics.watts_per_pixel = ComputeSaturationIntensity(sensor_optics);
+    sensor_optics.read_noise = ComputeReadNoise(sensor_optics);
+    sensor_optics.maxSNR = ComputeSNR(sensor_optics);
+    sensor_optics.detection_watts_per_pixel = ComputeIntensityAtTargetSNR(sensor_optics, target_detection_SNR);
+    detect = ones([1 l]).*sensor_optics.detection_watts_per_pixel;
+    intrsct(ctr) = max(intersections(dist_arr, wpp, ...
+                            dist_arr, detect, 1));
+    if (isempty(intrsct(ctr)))
+        detection_arr(ctr) = 0;
+    else
+        disp('intersection!')
+        detection_arr(ctr) = intrsct(ctr);
+    end
+
+end
+
+% legend([pw, p], labels)
+figure
+plot(time_data, detection_arr)
+title('Detection distance (SNR = 3) vs integration time (exposure)')
+xlabel('Integration time (ms)')
+ylabel('Detection distance (m)')
