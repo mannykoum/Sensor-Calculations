@@ -19,7 +19,7 @@ close all
 %% Initialization
 % Make the calculations from 1 to 100km
 dist_arr = logspace(-1, 8, 200); % Relative distance in m [1m, 10e+5m]
-times = [1e-6, 2e-6,  1e-5, 1e-4, 1e-2, 1]; % Exposure times in s
+times = [3.6506e-05, 2*3.6506e-05, 1e-04, 1e-03, 1e-02, 1e-01]; % Exposure times in s
 l = length(dist_arr);
 t_l = length(times);
 ctr = 1;
@@ -45,17 +45,23 @@ sensor_optics.d_coc_pix = 6.0; % Diameter of the circle of confusion in pixels
 
 figure
 colors = [[0,1,0.5]; [0,0.5,1]; [1,0.5,0]; [0.75,0,1]; [1,0,0.5]; [1,0.5,0.5]];
+% labels = {'Incident power per pixel from target', ...
+%       ['Saturation intensity for ',num2str(times(1)*1000),' ms exposure'],...
+%       ['Saturation intensity for ',num2str(times(2)*1000),' ms exposure'],...
+%       ['Saturation intensity for ',num2str(times(3)*1000),' ms exposure'],...
+%       ['Saturation intensity for ',num2str(times(4)*1000),' ms exposure'],...
+%       ['Saturation intensity for ',num2str(times(5)*1000),' ms exposure'],...
+%       ['Saturation intensity for ',num2str(times(6)*1000),' ms exposure']};
 labels = {'Incident power per pixel from target', ...
-      ['Saturation intensity for ',num2str(times(1)*1000),' ms exposure'],...
-      ['Saturation intensity for ',num2str(times(2)*1000),' ms exposure'],...
-      ['Saturation intensity for ',num2str(times(3)*1000),' ms exposure'],...
-      ['Saturation intensity for ',num2str(times(4)*1000),' ms exposure'],...
-      ['Saturation intensity for ',num2str(times(5)*1000),' ms exposure'],...
-      ['Saturation intensity for ',num2str(times(6)*1000),' ms exposure']};
-
+      ['Detection intensity for ',num2str(times(1)*1000),' ms exposure'],...
+      ['Detection intensity for ',num2str(times(2)*1000),' ms exposure'],...
+      ['Detection intensity for ',num2str(times(3)*1000),' ms exposure'],...
+      ['Detection intensity for ',num2str(times(4)*1000),' ms exposure'],...
+      ['Detection intensity for ',num2str(times(5)*1000),' ms exposure'],...
+      ['Detection intensity for ',num2str(times(6)*1000),' ms exposure']};
 %% Determine the power per pixel
 for i = 1:l
-    wpp(i) = dist_to_watts(dist_arr(i),0.1,0.1,0.2,0.85,...
+    wpp(i) = dist_to_watts(dist_arr(i),0.1,0.1,0.2,0.85, ...
         sensor_optics.focal_length, sensor_optics.s_s, ...
         sensor_optics.f_number, sensor_optics.d_coc_pix, ...
         sensor_optics.pix_pitch)*10^12;
@@ -83,9 +89,11 @@ for t = times % logspace(-5, -1, 4)
                                 dist_arr, saturation(ctr,:), 1);
     [det_xout,det_yout] = intersections(dist_arr, wpp, ...
                                 dist_arr, detection(ctr,:), 1);
-    p(ctr) = plot(dist_arr, saturation(ctr,:), 'Color', colors(ctr,:));
+%     p(ctr) = plot(dist_arr, saturation(ctr,:), 'Color', colors(ctr,:));
+    p(ctr) = plot(dist_arr, detection(ctr,:), 'Color', colors(ctr,:));
     
-    plot(xout, yout, 'r.', 'MarkerSize', 8)
+%     plot(xout, yout, 'r.', 'MarkerSize', 8)
+    plot(det_xout, det_yout, 'r.', 'MarkerSize', 8)
     hold on
 
     disp(['Exposure time: ', num2str(t*1000),' ms'])
@@ -115,34 +123,34 @@ title('Power per pixel vs distance')
 xlabel('Relative distance (m)')
 ylabel('Power per pixel (pW)')
 
-min_exp = 1e-6;
-max_exp = (2^32 - 1)*10^-6;
-time_data = logspace(log10( 1e-2 ), log10( 1 ), 200);
-td_l = length(time_data);
-
-detection_arr = zeros([1 td_l]);
-
-for ctr = 1:td_l 
-    sensor_optics.integration_time = time_data(ctr); % in s
-    sensor_optics.watts_per_pixel = ComputeSaturationIntensity(sensor_optics);
-    sensor_optics.read_noise = ComputeReadNoise(sensor_optics);
-    sensor_optics.maxSNR = ComputeSNR(sensor_optics);
-    sensor_optics.detection_watts_per_pixel = ComputeIntensityAtTargetSNR(sensor_optics, target_detection_SNR);
-    detect = ones([1 l]).*sensor_optics.detection_watts_per_pixel;
-    intrsct(ctr) = max(intersections(dist_arr, wpp, ...
-                            dist_arr, detect, 1));
-    if (isempty(intrsct(ctr)))
-        detection_arr(ctr) = 0;
-    else
-        disp('intersection!')
-        detection_arr(ctr) = intrsct(ctr);
-    end
-
-end
-
-% legend([pw, p], labels)
-figure
-plot(time_data, detection_arr)
-title('Detection distance (SNR = 3) vs integration time (exposure)')
-xlabel('Integration time (ms)')
-ylabel('Detection distance (m)')
+% min_exp = 1e-6;
+% max_exp = (2^32 - 1)*10^-6;
+% time_data = logspace(log10( 1e-2 ), log10( 1 ), 200);
+% td_l = length(time_data);
+% 
+% detection_arr = zeros([1 td_l]);
+% 
+% for ctr = 1:td_l 
+%     sensor_optics.integration_time = time_data(ctr); % in s
+%     sensor_optics.watts_per_pixel = ComputeSaturationIntensity(sensor_optics);
+%     sensor_optics.read_noise = ComputeReadNoise(sensor_optics);
+%     sensor_optics.maxSNR = ComputeSNR(sensor_optics);
+%     sensor_optics.detection_watts_per_pixel = ComputeIntensityAtTargetSNR(sensor_optics, target_detection_SNR);
+%     detect = ones([1 l]).*sensor_optics.detection_watts_per_pixel;
+%     intrsct(ctr) = max(intersections(dist_arr, wpp, ...
+%                             dist_arr, detect, 1));
+%     if (isempty(intrsct(ctr)))
+%         detection_arr(ctr) = 0;
+%     else
+%         disp('intersection!')
+%         detection_arr(ctr) = intrsct(ctr);
+%     end
+% 
+% end
+% 
+% % legend([pw, p], labels)
+% figure
+% plot(time_data, detection_arr)
+% title('Detection distance (SNR = 3) vs integration time (exposure)')
+% xlabel('Integration time (ms)')
+% ylabel('Detection distance (m)')
