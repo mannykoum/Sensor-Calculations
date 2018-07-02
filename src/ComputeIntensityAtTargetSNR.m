@@ -23,8 +23,8 @@ c = 299792458; % m/s (speed of light)
 joules_per_photon = h*c/lambda; % Energy of one photon in J
 
 if (targetSNR > optics.maxSNR)
-    ME = MException('Target SNR %f ', ...
-        'larget than maximum %f',targetSNR, optics.maxSNR);
+    ME = MException('Target SNR %d ', ...
+        'larget than maximum %d',targetSNR, optics.maxSNR);
     throw(ME)
 end
 
