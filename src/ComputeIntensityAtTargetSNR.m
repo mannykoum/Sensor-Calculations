@@ -15,21 +15,12 @@ full_well = optics.full_well; % e
 read_noise = optics.read_noise; % e (RMS)
 integration_time = optics.integration_time; % in s
 
-h = 6.62607004e-34; % Js (Planck constant)
-c = 299792458; % m/s (speed of light)
-
-joules_per_photon = h*c/lambda;
-photons_per_second_per_pixel = watts_per_pixel/joules_per_photon;
-
-signal = min(photons_per_second_per_pixel*quantum_efficiency*integration_time,full_well);
-
 if (targetSNR > optics.maxSNR)
-    ME = MException('Target SNR %f ', ...
-        'larget than maximum %f',targetSNR, optics.maxSNR);
+    ME = MException('Target SNR %d ', ...
+        'larget than maximum %d',targetSNR, optics.maxSNR);
     throw(ME)
 end
 
-SNR = signal/sqrt(signal+read_noise^2);
 target_signal = (targetSNR + sqrt(4 * (optics.read_noise^2) * ...
                 (targetSNR^2) + targetSNR^4))/2;
 
