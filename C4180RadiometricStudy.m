@@ -16,9 +16,11 @@ close all
 %% Initialization
 % Make the calculations from 1 to 1000km
 dist_arr = logspace(-1, 8, 10e6); % Relative distance in m [1m, 10e+6m]
-times = [1/100, 1/75, 1/50, 1/25, 1/10, 1/5]; % Exposure times in s
+
+times = [3.6506e-05, 2*3.6506e-05, 1e-04, 1e-03, 1e-02, 1e-01]; % Exposure times in s
 l = length(dist_arr);
 t_l = length(times);
+ctr = 1;
 target_detection_SNR = 2.0;
 
 % Saturation/Detection flag: set it to true for detection figure, false for
@@ -41,7 +43,7 @@ sensor_optics.pix_pitch = 4.5e-6; % 4.5 um
 sensor_optics.focal_length = 22.86e-3; % Focal length in m
 sensor_optics.f_number = 1.2; % f-number
 sensor_optics.s_s = 22.9217e-3; % Distance b/w sensor and lens in m
-sensor_optics.d_coc_pix = 6.0; % Diameter of the circle of confusion in pixels
+sensor_optics.d_coc_pix = 4.0; % Diameter of the circle of confusion in pixels
 
 figure
 colors = [[0,1,0.5]; [0,0.5,1]; [1,0.5,0]; [0.75,0,1]; [1,0,0.5]; [1,0.5,0.5]];
@@ -63,13 +65,16 @@ if (detection_flag)
 end
 %% Determine the power per pixel
 for i = 1:l
-    wpp(i) = dist_to_watts(dist_arr(i),0.05,0.045,0.03,0.85, ... % target of ave face 10 cm^2
+    wpp(i) = dist_to_watts(dist_arr(i),0.1,0.1,0.2,0.85, ...
         sensor_optics.focal_length, sensor_optics.s_s, ...
         sensor_optics.f_number, sensor_optics.d_coc_pix, ...
         sensor_optics.pix_pitch)*10^12;
 end
 
-pw = semilogx(dist_arr, wpp, 'b');
+figure('Visible','off')
+set(gcf,'Visible','off','CreateFcn','set(gcf,''Visible'',''on'')')
+
+pw = plot(dist_arr, wpp, 'b');
 axis tight
 grid on
 grid minor
@@ -87,30 +92,30 @@ for t = times % logspace(-5, -1, 4)
     % in pW/pix
 
 % find the solutions for saturation + detection of the target
-%     [xout,yout] = intersections(dist_arr, wpp, ...
-%                                 dist_arr, saturation(ctr,:), false);
-%     [det_xout,det_yout] = intersections(dist_arr, wpp, ...
-%                                 dist_arr, detection(ctr,:), false);
+    [xout,yout] = intersections(dist_arr, wpp, ...
+                                dist_arr, saturation(ctr,:), false);
+    [det_xout,det_yout] = intersections(dist_arr, wpp, ...
+                                dist_arr, detection(ctr,:), false);
     if (detection_flag)
         p(ctr) = plot(dist_arr, detection(ctr,:), 'Color', colors(ctr,:));
-%         plot(det_xout, det_yout, 'r.', 'MarkerSize', 8);
+        plot(det_xout, det_yout, 'r.', 'MarkerSize', 8);
     else
         p(ctr) = plot(dist_arr, saturation(ctr,:), 'Color', colors(ctr,:));
-%         plot(xout, yout, 'r.', 'MarkerSize', 8);
+        plot(xout, yout, 'r.', 'MarkerSize', 8);
     end
     
     hold on
 
     disp(['Exposure time: ', num2str(t*1000),' ms'])
-    if (~detection_flag)
-        disp(['The sensor saturates with ',...
+    if (xout)
+        disp(['At ',num2str(xout(1)),' m, the sensor saturates with ',...
                 num2str(sensor_optics.watts_per_pixel*10^12),' pW/pix']);
     else
         disp(['The saturation intensity does not intersect with the ',...
             'incident power from the target satellite']);
     end
-    if (detection_flag)
-        disp(['The sensor detects the ',... 
+    if (det_xout)
+        disp(['At ',num2str(det_xout(length(det_xout))),' m, the sensor detects the ',... 
             'target at incident power ', ...
             num2str(sensor_optics.detection_watts_per_pixel*10^12),' pW/pix']);
     else
@@ -127,3 +132,6 @@ legend([pw, p], labels)
 title('Power per pixel vs distance')
 xlabel('Relative distance (m)')
 ylabel('Power per pixel (pW)')
+
+savefig('Test.fig')
+close

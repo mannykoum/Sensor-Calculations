@@ -15,16 +15,17 @@ close all
 
 %% Initialization
 % Make the calculations from 1 to 100km
-dist_arr = logspace(-1, 8, 200); % Relative distance in m [1m, 10e+5m]
+dist_arr = logspace(-1, 9, 200); % Relative distance in m [1m, 10e+5m]
 times = [3.6506e-05, 2*3.6506e-05, 1e-04, 1e-03, 1e-02, 1e-01]; % Exposure times in s
+times = [3.6506e-05, 2*3.6506e-05, 1e-04, 1e-01, 0.2, 1e-0]; % Exposure times in s
 l = length(dist_arr);
 t_l = length(times);
 ctr = 1;
-target_detection_SNR = 3.0;
+target_detection_SNR = 2.0;
 
 % Saturation/Detection flag: set it to true for detection figure, false for
 % saturation figure
-detection_flag = false; 
+detection_flag = true; 
 
 % Preallocating
 wpp = zeros(1, l); % Incident power in watts per pixel
@@ -34,7 +35,7 @@ p = zeros(1, t_l);
 % Sensor characteristics 
 sensor_optics.quantum_efficiency = 0.63; % at 525 nm
 sensor_optics.lambda = 525e-9; % 525 nm
-sensor_optics.full_well = 6693.0;
+sensor_optics.full_well = 6693.0; % 
 sensor_optics.dynamic_range = 58.3; % 70.1 in datasheet
 sensor_optics.pix_pitch = 2.2e-6;
 
@@ -43,6 +44,11 @@ sensor_optics.focal_length = 22.86e-3; % Focal length in m
 sensor_optics.f_number = 1.2; % f-number
 sensor_optics.s_s = 22.9217e-3; % Distance b/w sensor and lens in m
 sensor_optics.d_coc_pix = 6.0; % Diameter of the circle of confusion in pixels
+% Lens (Schneider f/4, 4.8mm - near range)
+% sensor_optics.focal_length = 4.8e-3; % Focal length in m
+% sensor_optics.f_number = 1.8; % f-number
+% sensor_optics.s_s = 4.8352e-3; % Distance b/w sensor and lens in m
+% sensor_optics.d_coc_pix = 4.0; % Diameter of the circle of confusion in pixels
 
 figure
 colors = [[0,1,0.5]; [0,0.5,1]; [1,0.5,0]; [0.75,0,1]; [1,0,0.5]; [1,0.5,0.5]];
@@ -64,10 +70,16 @@ if (detection_flag)
 end
 %% Determine the power per pixel
 for i = 1:l
-    wpp(i) = dist_to_watts(dist_arr(i),0.1,0.1,0.2,0.85, ...
+%     Cubesat
+    [~,wpp(i),~] = dist_to_watts(dist_arr(i),[0.1,0.1,0.2],0.85, ...
         sensor_optics.focal_length, sensor_optics.s_s, ...
         sensor_optics.f_number, sensor_optics.d_coc_pix, ...
         sensor_optics.pix_pitch)*10^12;
+%     GEO Client
+%     wpp(i) = dist_to_watts(dist_arr(i),p2.3,1.8,3.7],0.85, ...
+%         sensor_optics.focal_length, sensor_optics.s_s, ...
+%         sensor_optics.f_number, sensor_optics.d_coc_pix, ...
+%         sensor_optics.pix_pitch)*10^12;
 end
 
 pw = plot(dist_arr, wpp, 'b');
@@ -81,7 +93,8 @@ for t = times % logspace(-5, -1, 4)
     sensor_optics.watts_per_pixel = ComputeSaturationIntensity(sensor_optics);
     sensor_optics.read_noise = ComputeReadNoise(sensor_optics);
     sensor_optics.maxSNR = ComputeSNR(sensor_optics);
-    sensor_optics.detection_watts_per_pixel = ComputeIntensityAtTargetSNR(sensor_optics, target_detection_SNR);
+    sensor_optics.detection_watts_per_pixel = ComputeIntensityAtTargetSNR(...
+        sensor_optics, target_detection_SNR);
     
     detection(ctr,:) = ones([1 l])*sensor_optics.detection_watts_per_pixel.*10^12;
     saturation(ctr,:) = ones([1 l])*sensor_optics.watts_per_pixel.*10^12; 
