@@ -1,4 +1,4 @@
-%%% Radiometric analysis of the Aptina MT9P031 sensor [script]
+%%% Radiometric analysis of the Imperx C4180 camera [script]
 % 
 % Info that might be useful
 % From a review
@@ -14,10 +14,9 @@ clear all
 close all
 
 %% Initialization
-% Make the calculations from 1 to 100km
-dist_arr = logspace(-1, 9, 200); % Relative distance in m [1m, 10e+5m]
+% Make the calculations from 1 to 1000km
+dist_arr = logspace(-1, 8, 10e6); % Relative distance in m [1m, 10e+6m]
 times = [3.6506e-05, 2*3.6506e-05, 1e-04, 1e-03, 1e-02, 1e-01]; % Exposure times in s
-times = [3.6506e-05, 2*3.6506e-05, 1e-04, 1e-01, 0.2, 1e-0]; % Exposure times in s
 l = length(dist_arr);
 t_l = length(times);
 ctr = 1;
@@ -33,22 +32,17 @@ saturation = zeros(t_l, l); % Array w/ saturation intensity
 p = zeros(1, t_l);
 
 % Sensor characteristics 
-sensor_optics.quantum_efficiency = 0.63; % at 525 nm
-sensor_optics.lambda = 525e-9; % 525 nm
-sensor_optics.full_well = 6693.0; % 
-sensor_optics.dynamic_range = 58.3; % 70.1 in datasheet
-sensor_optics.pix_pitch = 2.2e-6;
+sensor_optics.quantum_efficiency = 0.50; % at 535 nm
+sensor_optics.lambda = 535e-9; % 525 nm
+sensor_optics.full_well = 12000; % in electrons
+sensor_optics.dynamic_range = 59; % in dB
+sensor_optics.pix_pitch = 4.5e-6; % 4.5 um
 
 % Lens (Adcole MAI Aero Space Sextant)
 sensor_optics.focal_length = 22.86e-3; % Focal length in m
 sensor_optics.f_number = 1.2; % f-number
 sensor_optics.s_s = 22.9217e-3; % Distance b/w sensor and lens in m
-sensor_optics.d_coc_pix = 6.0; % Diameter of the circle of confusion in pixels
-% Lens (Schneider f/4, 4.8mm - near range)
-% sensor_optics.focal_length = 4.8e-3; % Focal length in m
-% sensor_optics.f_number = 1.8; % f-number
-% sensor_optics.s_s = 4.8352e-3; % Distance b/w sensor and lens in m
-% sensor_optics.d_coc_pix = 4.0; % Diameter of the circle of confusion in pixels
+sensor_optics.d_coc_pix = 4.0; % Diameter of the circle of confusion in pixels
 
 figure
 colors = [[0,1,0.5]; [0,0.5,1]; [1,0.5,0]; [0.75,0,1]; [1,0,0.5]; [1,0.5,0.5]];
@@ -70,17 +64,14 @@ if (detection_flag)
 end
 %% Determine the power per pixel
 for i = 1:l
-%     Cubesat
-    [~,wpp(i),~] = dist_to_watts(dist_arr(i),[0.1,0.1,0.2],0.85, ...
+    wpp(i) = dist_to_watts(dist_arr(i),0.1,0.1,0.2,0.85, ...
         sensor_optics.focal_length, sensor_optics.s_s, ...
         sensor_optics.f_number, sensor_optics.d_coc_pix, ...
         sensor_optics.pix_pitch)*10^12;
-%     GEO Client
-%     wpp(i) = dist_to_watts(dist_arr(i),p2.3,1.8,3.7],0.85, ...
-%         sensor_optics.focal_length, sensor_optics.s_s, ...
-%         sensor_optics.f_number, sensor_optics.d_coc_pix, ...
-%         sensor_optics.pix_pitch)*10^12;
 end
+
+figure('Visible','off')
+set(gcf,'Visible','off','CreateFcn','set(gcf,''Visible'',''on'')')
 
 pw = plot(dist_arr, wpp, 'b');
 axis tight
@@ -93,8 +84,7 @@ for t = times % logspace(-5, -1, 4)
     sensor_optics.watts_per_pixel = ComputeSaturationIntensity(sensor_optics);
     sensor_optics.read_noise = ComputeReadNoise(sensor_optics);
     sensor_optics.maxSNR = ComputeSNR(sensor_optics);
-    sensor_optics.detection_watts_per_pixel = ComputeIntensityAtTargetSNR(...
-        sensor_optics, target_detection_SNR);
+    sensor_optics.detection_watts_per_pixel = ComputeIntensityAtTargetSNR(sensor_optics, target_detection_SNR);
     
     detection(ctr,:) = ones([1 l])*sensor_optics.detection_watts_per_pixel.*10^12;
     saturation(ctr,:) = ones([1 l])*sensor_optics.watts_per_pixel.*10^12; 
@@ -102,9 +92,9 @@ for t = times % logspace(-5, -1, 4)
 
 % find the solutions for saturation + detection of the target
     [xout,yout] = intersections(dist_arr, wpp, ...
-                                dist_arr, saturation(ctr,:), 1);
+                                dist_arr, saturation(ctr,:), false);
     [det_xout,det_yout] = intersections(dist_arr, wpp, ...
-                                dist_arr, detection(ctr,:), 1);
+                                dist_arr, detection(ctr,:), false);
     if (detection_flag)
         p(ctr) = plot(dist_arr, detection(ctr,:), 'Color', colors(ctr,:));
         plot(det_xout, det_yout, 'r.', 'MarkerSize', 8);
@@ -142,3 +132,5 @@ title('Power per pixel vs distance')
 xlabel('Relative distance (m)')
 ylabel('Power per pixel (pW)')
 
+savefig('Test.fig')
+close
